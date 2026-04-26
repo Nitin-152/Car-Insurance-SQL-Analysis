@@ -73,20 +73,6 @@ This is an end-to-end **SQL data analysis project** on **58,592 car insurance po
 
 ---
 
-## 💡 Key Business Insights
-
-> *(Fill these in after running the queries in SSMS)*
-
-- 📊 Overall claim rate across 58K policies = **X%**
-- ⛽ **[Fuel type]** had the highest claim rate among fuel types
-- 🚘 **[Segment]** was the riskiest car segment in the portfolio
-- 👤 **Young policyholders** with older cars showed significantly higher claim rates
-- 🛡️ Higher NCAP safety ratings correlated with **[lower/higher]** claim frequency
-- 🏙️ **Metro/Urban** areas showed higher claim rates than rural zones
-- 📍 Area cluster **[X]** had the highest regional claim rate
-
----
-
 ## ▶️ How to Run This Project
 
 1. Download the dataset from the Kaggle link above
