@@ -1,0 +1,302 @@
+-- ============================================================
+-- PROJECT  : Car Insurance Policy & Claims Analysis
+-- AUTHOR   : Your Name
+-- TOOL     : SQL Server Management Studio (SSMS)
+-- DATASET  : Kaggle - Car Insurance Claim Prediction
+--            https://www.kaggle.com/datasets/ifteshanajnin/
+--            carinsuranceclaimprediction-classification
+-- DATE     : April 2026
+-- ============================================================
+
+-- ============================================================
+-- TABLE OF CONTENTS
+-- ============================================================
+-- SECTION 1 : Policy & Claims Overview       (Q1  - Q4 )
+-- SECTION 2 : Risk & Customer Analysis       (Q5  - Q8 )
+-- SECTION 3 : Advanced Business Intelligence (Q9  - Q15)
+-- ============================================================
+
+-- ============================================================
+-- PRE-CHECK: Make sure you are using the correct database
+-- ============================================================
+USE car_insurance_db;
+
+-- Quick sanity check before running analysis
+SELECT COUNT(*) AS total_rows FROM car_insurance;  -- Expected: 58,592
+
+
+-- ============================================================
+-- SECTION 1: POLICY & CLAIMS OVERVIEW
+-- ============================================================
+
+-- Q1: Total policies and overall claim rate
+-- Business Use: Understand the scale of the portfolio and
+--               baseline claim rate for benchmarking
+-- --------------------------------------------------------
+SELECT 
+    COUNT(*)                                        AS total_policies,
+    SUM(is_claim)                                   AS total_claims,
+    ROUND(SUM(is_claim) * 100.0 / COUNT(*), 2)      AS claim_rate_pct
+FROM car_insurance;
+
+
+-- Q2: Claim rate by fuel type (Petrol vs Diesel vs CNG)
+-- Business Use: Identify which fuel type carries higher risk
+--               to adjust premium pricing accordingly
+-- --------------------------------------------------------
+SELECT 
+    fuel_type,
+    COUNT(*)                                        AS total_policies,
+    SUM(is_claim)                                   AS claims_filed,
+    ROUND(SUM(is_claim) * 100.0 / COUNT(*), 2)      AS claim_rate_pct
+FROM car_insurance
+GROUP BY fuel_type
+ORDER BY claim_rate_pct DESC;
+
+
+-- Q3: Claim rate by car segment (A, B, C, D etc)
+-- Business Use: Determine which vehicle segment is riskiest
+--               for underwriting and policy design decisions
+-- --------------------------------------------------------
+SELECT 
+    segment,
+    COUNT(*)                                        AS total_policies,
+    SUM(is_claim)                                   AS claims_filed,
+    ROUND(SUM(is_claim) * 100.0 / COUNT(*), 2)      AS claim_rate_pct
+FROM car_insurance
+GROUP BY segment
+ORDER BY claim_rate_pct DESC;
+
+
+-- Q4: Claim rate by transmission type (Manual vs Automatic)
+-- Business Use: Check if transmission type is a risk factor
+--               worth including in premium calculations
+-- --------------------------------------------------------
+SELECT 
+    transmission_type,
+    COUNT(*)                                        AS total_policies,
+    SUM(is_claim)                                   AS claims_filed,
+    ROUND(SUM(is_claim) * 100.0 / COUNT(*), 2)      AS claim_rate_pct
+FROM car_insurance
+GROUP BY transmission_type
+ORDER BY claim_rate_pct DESC;
+
+
+-- ============================================================
+-- SECTION 2: RISK & CUSTOMER ANALYSIS
+-- ============================================================
+
+-- Q5: Claim rate by policyholder age group
+-- Business Use: Profile which age group files most claims
+--               Note: age_of_policyholder is stored as a ratio (0 to 1)
+--               where 1.0 = oldest in dataset
+-- --------------------------------------------------------
+SELECT 
+    CASE 
+        WHEN age_of_policyholder < 0.25                 THEN 'Young (Below 25%)'
+        WHEN age_of_policyholder BETWEEN 0.25 AND 0.50  THEN 'Mid (25-50%)'
+        WHEN age_of_policyholder BETWEEN 0.50 AND 0.75  THEN 'Senior (50-75%)'
+        ELSE                                                  'Oldest (Above 75%)'
+    END                                             AS age_group,
+    COUNT(*)                                        AS total_policies,
+    SUM(is_claim)                                   AS claims_filed,
+    ROUND(SUM(is_claim) * 100.0 / COUNT(*), 2)      AS claim_rate_pct
+FROM car_insurance
+GROUP BY 
+    CASE 
+        WHEN age_of_policyholder < 0.25                 THEN 'Young (Below 25%)'
+        WHEN age_of_policyholder BETWEEN 0.25 AND 0.50  THEN 'Mid (25-50%)'
+        WHEN age_of_policyholder BETWEEN 0.50 AND 0.75  THEN 'Senior (50-75%)'
+        ELSE                                                  'Oldest (Above 75%)'
+    END
+ORDER BY claim_rate_pct DESC;
+
+
+-- Q6: Does vehicle age affect claim rate?
+-- Business Use: Older cars may have higher mechanical risk
+--               Note: age_of_car is stored as a ratio (0 to 1)
+-- --------------------------------------------------------
+SELECT 
+    CASE
+        WHEN age_of_car < 0.10                      THEN 'Brand New'
+        WHEN age_of_car BETWEEN 0.10 AND 0.30       THEN 'Relatively New'
+        WHEN age_of_car BETWEEN 0.30 AND 0.60       THEN 'Mid Age'
+        ELSE                                             'Older Car'
+    END                                             AS car_age_group,
+    COUNT(*)                                        AS total_policies,
+    SUM(is_claim)                                   AS claims_filed,
+    ROUND(SUM(is_claim) * 100.0 / COUNT(*), 2)      AS claim_rate_pct
+FROM car_insurance
+GROUP BY 
+    CASE
+        WHEN age_of_car < 0.10                      THEN 'Brand New'
+        WHEN age_of_car BETWEEN 0.10 AND 0.30       THEN 'Relatively New'
+        WHEN age_of_car BETWEEN 0.30 AND 0.60       THEN 'Mid Age'
+        ELSE                                             'Older Car'
+    END
+ORDER BY claim_rate_pct DESC;
+
+
+-- Q7: Does policy tenure reduce claims?
+-- Business Use: Check if loyal long-term customers are safer
+--               Note: policy_tenure is stored as a ratio (0 to 1)
+-- --------------------------------------------------------
+SELECT 
+    CASE
+        WHEN policy_tenure < 0.25                   THEN 'Short Tenure'
+        WHEN policy_tenure BETWEEN 0.25 AND 0.50    THEN 'Medium Tenure'
+        WHEN policy_tenure BETWEEN 0.50 AND 0.75    THEN 'Long Tenure'
+        ELSE                                             'Very Long Tenure'
+    END                                             AS tenure_group,
+    COUNT(*)                                        AS total_policies,
+    SUM(is_claim)                                   AS claims_filed,
+    ROUND(SUM(is_claim) * 100.0 / COUNT(*), 2)      AS claim_rate_pct
+FROM car_insurance
+GROUP BY 
+    CASE
+        WHEN policy_tenure < 0.25                   THEN 'Short Tenure'
+        WHEN policy_tenure BETWEEN 0.25 AND 0.50    THEN 'Medium Tenure'
+        WHEN policy_tenure BETWEEN 0.50 AND 0.75    THEN 'Long Tenure'
+        ELSE                                             'Very Long Tenure'
+    END
+ORDER BY claim_rate_pct DESC;
+
+
+-- Q8: Does higher NCAP safety rating mean fewer claims?
+-- Business Use: Validate whether safety-rated cars actually
+--               reduce claim frequency (supports discount policy)
+-- --------------------------------------------------------
+SELECT 
+    ncap_rating,
+    COUNT(*)                                        AS total_policies,
+    SUM(is_claim)                                   AS claims_filed,
+    ROUND(SUM(is_claim) * 100.0 / COUNT(*), 2)      AS claim_rate_pct
+FROM car_insurance
+GROUP BY ncap_rating
+ORDER BY ncap_rating;
+
+
+-- ============================================================
+-- SECTION 3: ADVANCED BUSINESS INTELLIGENCE
+-- ============================================================
+
+-- Q9: Do airbags actually reduce claim rates?
+-- Business Use: Quantify the impact of airbags on risk
+--               Informs safety-feature discount eligibility
+-- --------------------------------------------------------
+SELECT 
+    airbags,
+    COUNT(*)                                        AS total_policies,
+    SUM(is_claim)                                   AS claims_filed,
+    ROUND(SUM(is_claim) * 100.0 / COUNT(*), 2)      AS claim_rate_pct
+FROM car_insurance
+GROUP BY airbags
+ORDER BY airbags;
+
+
+-- Q10: Urban vs Rural claim rates based on population density
+-- Business Use: Geographic risk segmentation
+--               Metro cities may need higher premiums due to traffic
+-- --------------------------------------------------------
+SELECT 
+    CASE
+        WHEN population_density < 5000              THEN 'Rural'
+        WHEN population_density < 15000             THEN 'Semi-Urban'
+        WHEN population_density < 30000             THEN 'Urban'
+        ELSE                                             'Metro'
+    END                                             AS area_type,
+    COUNT(*)                                        AS total_policies,
+    SUM(is_claim)                                   AS claims_filed,
+    ROUND(SUM(is_claim) * 100.0 / COUNT(*), 2)      AS claim_rate_pct
+FROM car_insurance
+GROUP BY 
+    CASE
+        WHEN population_density < 5000              THEN 'Rural'
+        WHEN population_density < 15000             THEN 'Semi-Urban'
+        WHEN population_density < 30000             THEN 'Urban'
+        ELSE                                             'Metro'
+    END
+ORDER BY claim_rate_pct DESC;
+
+
+-- Q11: Top 10 area clusters with highest claim rates
+-- Business Use: Identify high-risk geographic zones
+--               Only includes clusters with 100+ policies for reliability
+-- --------------------------------------------------------
+SELECT TOP 10
+    area_cluster,
+    COUNT(*)                                        AS total_policies,
+    SUM(is_claim)                                   AS claims_filed,
+    ROUND(SUM(is_claim) * 100.0 / COUNT(*), 2)      AS claim_rate_pct
+FROM car_insurance
+GROUP BY area_cluster
+HAVING COUNT(*) > 100
+ORDER BY claim_rate_pct DESC;
+
+
+-- Q12: Safety feature scorecard
+-- Business Use: Check if more safety features = fewer claims
+--               Score = sum of 7 key safety feature flags (0 to 7)
+-- --------------------------------------------------------
+SELECT 
+    (is_esc + is_tpms + is_parking_sensors + is_parking_camera +
+     is_brake_assist + is_power_steering + is_speed_alert)    AS safety_score,
+    COUNT(*)                                                   AS total_policies,
+    SUM(is_claim)                                              AS claims_filed,
+    ROUND(SUM(is_claim) * 100.0 / COUNT(*), 2)                 AS claim_rate_pct
+FROM car_insurance
+GROUP BY 
+    (is_esc + is_tpms + is_parking_sensors + is_parking_camera +
+     is_brake_assist + is_power_steering + is_speed_alert)
+ORDER BY safety_score;
+
+
+-- Q13: High risk profile detection
+-- Business Use: Flag the most dangerous customer segment:
+--               Young policyholder + Old car + Low safety rating
+--               These policies may need special review or higher premium
+-- --------------------------------------------------------
+SELECT 
+    COUNT(*)                                        AS high_risk_policies,
+    SUM(is_claim)                                   AS claims_filed,
+    ROUND(SUM(is_claim) * 100.0 / COUNT(*), 2)      AS claim_rate_pct
+FROM car_insurance
+WHERE age_of_policyholder < 0.25        -- younger policyholders
+  AND age_of_car           > 0.50       -- older cars
+  AND ncap_rating          <= 2;        -- low safety rating
+
+
+-- Q14: Rank car segments by claim rate (Window Function)
+-- Business Use: Executive-level ranking of risk by segment
+--               Rank 1 = highest risk segment in the portfolio
+-- --------------------------------------------------------
+SELECT 
+    segment,
+    COUNT(*)                                        AS total_policies,
+    SUM(is_claim)                                   AS claims,
+    ROUND(SUM(is_claim) * 100.0 / COUNT(*), 2)      AS claim_rate_pct,
+    RANK() OVER (
+        ORDER BY SUM(is_claim) * 100.0 / COUNT(*) DESC
+    )                                               AS risk_rank
+FROM car_insurance
+GROUP BY segment;
+
+
+-- Q15: Cumulative claims by area cluster (Running Total)
+-- Business Use: Understand how claim exposure builds across regions
+--               Helps actuaries track total risk distribution geographically
+-- --------------------------------------------------------
+SELECT 
+    area_cluster,
+    SUM(is_claim)                                   AS cluster_claims,
+    SUM(SUM(is_claim)) OVER (
+        ORDER BY area_cluster
+    )                                               AS cumulative_claims
+FROM car_insurance
+GROUP BY area_cluster
+ORDER BY area_cluster;
+
+
+-- ============================================================
+-- END OF ANALYSIS
+-- ============================================================
